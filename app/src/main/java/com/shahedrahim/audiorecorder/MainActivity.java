@@ -14,14 +14,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     private Button btnRecord, btnStopRecord, btnPlay, btnStop;
-    private String pathSave = "";
-    MediaPlayer mediaPlayer;
-    MediaRecorder mediaRecorder;
+
+    private AudioRecorder audioRecorder;
 
     private final int REQUEST_PERMISSION_CODE = 1000;
 
@@ -35,6 +34,11 @@ public class MainActivity extends AppCompatActivity {
         btnPlay = findViewById(R.id.play_btn);
         btnStop = findViewById(R.id.stop_play_btn);
 
+        audioRecorder = new AudioRecorder(Environment.getExternalStorageDirectory()
+                .getAbsolutePath() + File.separator +
+                UUID.randomUUID().toString() +
+                "_audio_record.3gp");
+
         if (!checkPermissionFromDevice()) {
             requestPermission();
         }
@@ -44,17 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onClick(View v) {
-                    pathSave = Environment.getExternalStorageDirectory()
-                            .getAbsolutePath() + "/" +
-                            UUID.randomUUID().toString() +
-                            "_audio_record.3gp";
-                    setupMediaRecorder();
-                    try {
-                        mediaRecorder.prepare();
-                        mediaRecorder.start();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    audioRecorder.btnRecOnClickHandler();
 
                     Toast.makeText(MainActivity.this, "Recording...", Toast.LENGTH_SHORT).show();
                     btnPlay.setEnabled(false);
@@ -69,12 +63,9 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
-                if (mediaRecorder!=null) {
-                    mediaRecorder.stop();
-                    mediaRecorder.release();
-                    mediaRecorder = null;
-                    Toast.makeText(MainActivity.this, "Stopped Recording...", Toast.LENGTH_SHORT).show();
-                }
+                audioRecorder.btnStopRecOnClickHandler();
+
+                Toast.makeText(MainActivity.this, "Stopped Recording...", Toast.LENGTH_SHORT).show();
                 btnPlay.setEnabled(true);
                 btnStop.setEnabled(false);
                 btnStopRecord.setEnabled(false);
@@ -86,8 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
-                setupMediaPlayer();
-                mediaPlayer.start();
+                audioRecorder.btnPlayOnClickHandler();
 
                 Toast.makeText(MainActivity.this, "Playing...", Toast.LENGTH_SHORT).show();
                 btnPlay.setEnabled(false);
@@ -101,36 +91,15 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
-                if (mediaPlayer!=null) {
-                    mediaPlayer.stop();
-                    mediaPlayer.release();
-                    mediaPlayer = null;
-                    Toast.makeText(MainActivity.this, "Stopped Playing...", Toast.LENGTH_SHORT).show();
-                }
+                audioRecorder.btnStopPlayOnClickHandler();
+
+                Toast.makeText(MainActivity.this, "Stopped Playing...", Toast.LENGTH_SHORT).show();
                 btnPlay.setEnabled(true);
                 btnStop.setEnabled(false);
                 btnStopRecord.setEnabled(false);
                 btnRecord.setEnabled(true);
             }
         });
-    }
-
-    private void setupMediaPlayer() {
-        mediaPlayer = new MediaPlayer();
-        try {
-            mediaPlayer.setDataSource(pathSave);
-            mediaPlayer.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setupMediaRecorder() {
-        mediaRecorder = new MediaRecorder();
-        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mediaRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
-        mediaRecorder.setOutputFile(pathSave);
     }
 
     private boolean checkPermissionFromDevice() {
