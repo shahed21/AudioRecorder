@@ -20,6 +20,7 @@ public class AudioRecorder {
     private MediaPlayer mediaPlayer;
     private AudioManager audioManager;
     private AudioManager.OnAudioFocusChangeListener afChangeListener;
+    private AudioFocusRequest audioFocusRequest;
 
     private MediaRecorder mediaRecorder;
     private OnCompletionListener arOncompletionListener = null;
@@ -115,10 +116,29 @@ public class AudioRecorder {
         }
         if (afChangeListener!=null) {
             Log.d(TAG, "releaseMediaPlayer: releasing audioFocusChangeListener");
-            /*TODO change deprecated code to latest code*/
-            /*https://developer.android.com/guide/topics/media-apps/audio-focus#java*/
-            audioManager.abandonAudioFocus(afChangeListener);
+            abandonAudioFocus();
         }
+    }
+
+    /**
+     * This method is needed because AudioManager.abandonAudioFocus with OnFocusChangeListener is
+     * decprecated after API 26.
+     * @return AUDIOFOCUS_REQUEST_FAILED or AUDIOFOCUS_REQUEST_GRANTED
+     */
+    private int abandonAudioFocus() {
+        int r;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (audioFocusRequest!=null) {
+                r = audioManager.abandonAudioFocusRequest(audioFocusRequest);
+            } else {
+                //nothing to abandon
+                r = AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+            }
+        } else {
+            //noinspection deprecation
+            r = audioManager.abandonAudioFocus(afChangeListener);
+        }
+        return r;
     }
 
     /**
@@ -127,20 +147,20 @@ public class AudioRecorder {
      * @param focusChangeListener
      * @param streamType
      * @param audioFocusGain
-     * @return
+     * @return true if AUDIOFOCUS_REQUEST_GRANTED was recieved
      */
     private boolean requestAudioFocus(AudioManager.OnAudioFocusChangeListener focusChangeListener,
                                       int streamType, int audioFocusGain) {
         int r;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            r = audioManager.requestAudioFocus(
-                    new AudioFocusRequest.Builder(audioFocusGain)
-                            .setAudioAttributes(
-                                    new AudioAttributes.Builder()
-                                            .setLegacyStreamType(streamType)
-                                            .build())
-                            .setOnAudioFocusChangeListener(focusChangeListener)
-                            .build());
+            audioFocusRequest = new AudioFocusRequest.Builder(audioFocusGain)
+                    .setAudioAttributes(
+                            new AudioAttributes.Builder()
+                                    .setLegacyStreamType(streamType)
+                                    .build())
+                    .setOnAudioFocusChangeListener(focusChangeListener)
+                    .build();
+            r = audioManager.requestAudioFocus(audioFocusRequest);
         } else {
             //noinspection deprecation
             r = audioManager.requestAudioFocus(focusChangeListener, streamType, audioFocusGain);
