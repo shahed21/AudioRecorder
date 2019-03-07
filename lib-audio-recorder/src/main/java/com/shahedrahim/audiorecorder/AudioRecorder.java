@@ -116,6 +116,7 @@ public class AudioRecorder {
         if (afChangeListener!=null) {
             Log.d(TAG, "releaseMediaPlayer: releasing audioFocusChangeListener");
             /*TODO change deprecated code to latest code*/
+            /*https://developer.android.com/guide/topics/media-apps/audio-focus#java*/
             audioManager.abandonAudioFocus(afChangeListener);
         }
     }
