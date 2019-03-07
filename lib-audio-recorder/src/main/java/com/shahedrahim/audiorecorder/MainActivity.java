@@ -8,6 +8,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -15,7 +16,10 @@ import android.widget.Toast;
 import java.io.File;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity
+    implements AudioRecorder.OnCompletionListener{
+    private static final String TAG = "MainActivity";
+
     private Button btnRecord, btnStopRecord, btnPlay, btnStop;
 
     private AudioRecorder audioRecorder;
@@ -35,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         audioRecorder = new AudioRecorder(Environment.getExternalStorageDirectory()
                 .getAbsolutePath() + File.separator +
                 UUID.randomUUID().toString() +
-                "_audio_record.3gp");
+                "_audio_record.3gp", this,this);
 
         if (!checkPermissionFromDevice()) {
             requestPermission();
@@ -128,5 +132,10 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
         }
+    }
+
+    @Override
+    public void onCompletionListener() {
+        Log.d(TAG, "onCompletionListener: mediaPlayer Completed playing");
     }
 }
