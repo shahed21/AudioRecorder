@@ -17,9 +17,9 @@ public class AudioRecorder {
     private static final String TAG = "AudioRecorder";
 
     private String pathSave = "";
+    private String playPath = "";
     private int audioResId;
     private Context context;
-    private boolean useResId;
 
     private MediaPlayer mediaPlayer;
     private AudioManager audioManager;
@@ -44,7 +44,7 @@ public class AudioRecorder {
         this.pathSave = pathSave;
         arOncompletionListener = onCompletionListener;
         this.context = context;
-        useResId = false;
+        this.playPath = pathSave;
         setupAudioManager(context);
     }
 
@@ -52,10 +52,11 @@ public class AudioRecorder {
             String pathSave,
             Context context,
             OnCompletionListener onCompletionListener,
-            int audioResId) {
+            int audioResId,
+            String playPath) {
         this(pathSave, context, onCompletionListener);
-        this.useResId = true;
         this.audioResId = audioResId;
+        this.playPath = playPath;
     }
 
     public void btnRecOnClickHandler() {
@@ -64,7 +65,7 @@ public class AudioRecorder {
         try {
             mediaRecorder.prepare();
             mediaRecorder.start();
-            useResId = false;
+            playPath = pathSave;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -84,9 +85,10 @@ public class AudioRecorder {
         Log.d(TAG, "btnPlayOnClickHandler: Requesting AudioFocus");
         if (requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)) {
             Log.d(TAG, "btnPlayOnClickHandler: will start playing");
-            setupMediaPlayer();
-            mediaPlayer.start();
-            mediaPlayer.setOnCompletionListener(onCompletionListener);
+            if (setupMediaPlayer()) {
+                mediaPlayer.start();
+                mediaPlayer.setOnCompletionListener(onCompletionListener);
+            }
         } else {
             Log.d(TAG, "btnPlayOnClickHandler: AudioFocus denied");
         }
@@ -101,18 +103,23 @@ public class AudioRecorder {
         }
     }
 
-    private void setupMediaPlayer() {
+    private boolean setupMediaPlayer() {
         Log.d(TAG, "setupMediaPlayer: setting up media player");
-        if (!useResId) {
+        if (playPath!=null) {
             mediaPlayer = new MediaPlayer();
             try {
-                mediaPlayer.setDataSource(pathSave);
+                mediaPlayer.setDataSource(playPath);
                 mediaPlayer.prepare();
+                return true;
             } catch (IOException e) {
                 e.printStackTrace();
+                return false;
             }
-        } else {
+        } else if (this.audioResId!=0){
             mediaPlayer = MediaPlayer.create(context, this.audioResId);
+            return true;
+        } else {
+            return false;
         }
     }
 
