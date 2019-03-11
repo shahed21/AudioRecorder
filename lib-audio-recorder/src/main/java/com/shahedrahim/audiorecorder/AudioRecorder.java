@@ -10,12 +10,16 @@ import android.media.MediaRecorder;
 import android.os.Build;
 import android.util.Log;
 
+import java.io.File;
 import java.io.IOException;
 
 public class AudioRecorder {
     private static final String TAG = "AudioRecorder";
 
     private String pathSave = "";
+    private int audioResId;
+    private Context context;
+    private boolean useResId;
 
     private MediaPlayer mediaPlayer;
     private AudioManager audioManager;
@@ -39,7 +43,19 @@ public class AudioRecorder {
             OnCompletionListener onCompletionListener) {
         this.pathSave = pathSave;
         arOncompletionListener = onCompletionListener;
+        this.context = context;
+        useResId = false;
         setupAudioManager(context);
+    }
+
+    public AudioRecorder(
+            String pathSave,
+            Context context,
+            OnCompletionListener onCompletionListener,
+            int audioResId) {
+        this(pathSave, context, onCompletionListener);
+        this.useResId = true;
+        this.audioResId = audioResId;
     }
 
     public void btnRecOnClickHandler() {
@@ -48,6 +64,7 @@ public class AudioRecorder {
         try {
             mediaRecorder.prepare();
             mediaRecorder.start();
+            useResId = false;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -86,12 +103,16 @@ public class AudioRecorder {
 
     private void setupMediaPlayer() {
         Log.d(TAG, "setupMediaPlayer: setting up media player");
-        mediaPlayer = new MediaPlayer();
-        try {
-            mediaPlayer.setDataSource(pathSave);
-            mediaPlayer.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (!useResId) {
+            mediaPlayer = new MediaPlayer();
+            try {
+                mediaPlayer.setDataSource(pathSave);
+                mediaPlayer.prepare();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            mediaPlayer = MediaPlayer.create(context, this.audioResId);
         }
     }
 
